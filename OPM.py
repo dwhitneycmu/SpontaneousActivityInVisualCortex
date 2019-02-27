@@ -12,6 +12,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import os
 import scipy.ndimage as snd
 from scipy.io import loadmat,savemat
+from Spontaneous import FILTER_CUTOFF
 
 # Setup binned HSV colormap
 LUT_colors = [
@@ -62,7 +63,7 @@ class OPM():
             scms = scms / np.repeat(np.sum(scms,axis=2).reshape([h,w,1]),n_conds,axis=2)
         self.opm = np.sum(scms*np.tile(phaseVector,[h,w,1]),axis=2)
     
-    def spatial_filter_OPM(self,sigma=15):
+    def spatial_filter_OPM(self,sigma=np.round(FILTER_CUTOFF)):
         """Spatial high-pass filter the orientation map at the specified cutoff (sigma)"""
         mask = self.mask & np.isfinite(self.opm)
         opm  = self.opm
@@ -87,7 +88,7 @@ class OPM():
         mask = np.repeat(np.copy(self.mask).astype(hsv_map.dtype).reshape([h,w,1]),hsv_map.shape[2],axis=2)
         return hsv_map*mask;  
 
-    def addOPMContours(self,ax=None,angles=[0,45]):
+    def addOPMContours(self,ax=None,angles=[0,45],colors=['white']):
         """Add white contours to the current axis (ax) delineating the zero-crossings
         of the orientation preference map for the specified angles. Default is [0,45]."""
         if(type(ax)==type(None)):
@@ -95,7 +96,7 @@ class OPM():
         [xx,yy]=np.meshgrid(np.arange(0,self.opm.shape[1]), \
                             np.arange(0,self.opm.shape[0]))
         for angle in angles:
-            ax.contour(xx,yy,np.real(self.opm/np.exp(1j*2*np.pi*angle/180.)),0,colors='white')
+            ax.contour(xx,yy,np.real(self.opm/np.exp(1j*2*np.pi*angle/180.)),0,colors=colors)
         
 if __name__=='__main__':
     make_dataset = True

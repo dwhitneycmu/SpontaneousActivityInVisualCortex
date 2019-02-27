@@ -6,11 +6,14 @@ Created on Sat Feb 23 20:04:05 2019
 """
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import os
 import scipy.ndimage as snd
 from scipy.io import loadmat, savemat
 import zipfile
+import warnings
+FILTER_CUTOFF = np.round(195*153/4000.) # This should be 7-8 pixels
 
 def sub2ind(SIZ, rows, cols):
     """ returns the linear index equivalent to the row and column subscripts in
@@ -47,8 +50,6 @@ class Spontaneous():
         self.folder_path = folder_path
         if len(folder_path) > 0:
             self.load_data(folder_path)
-            self.spatial_filter_events()
-            self.get_correlation_table()
 
     def load_data(self, folder_path=str('')):
         """load spontaneous time-series data, including an imaging stack containing the active event frames"""
@@ -60,11 +61,14 @@ class Spontaneous():
             self.mask = self.data['mask'].astype('bool')
 
             tseries_path = folder_path + '/spont_time_series.zip'
-            assert os.path.isfile(tseries_path), 'spont_time_series.zip not found at specified path: {}'.format(tseries_path)
-            with zipfile.ZipFile(tseries_path, 'r') as zip:
-                self.data['spont_time_series_3Hz'] = zip.read('spont_time_series.npy')
+            if(os.path.isfile(tseries_path)):
+                with zipfile.ZipFile(tseries_path, 'r') as zip:
+                    self.data['spont_time_series_3Hz'] = zip.read('spont_time_series.npy')
+            else:
+                warningMessage = 'Warning: Could not find spont_time_series.zip at specified path: {}/n. Time-series data will not be included.'.format(tseries_path)
+                warnings.warn(warningMessage)
 
-    def spatial_filter_events(self,sigma=15):
+    def spatial_filter_events(self,sigma=FILTER_CUTOFF):
         """Spatial high-pass filter the active event frames at the specified cutoff (sigma)"""
         mask = self.mask
         event_frames = self.data['spont_event_frames']
@@ -103,10 +107,16 @@ class Spontaneous():
         corrPattern[mask.flatten()] = self.corrTable[:,seedID]
         corrPattern = np.reshape(corrPattern,mask.shape)
         return corrPattern
+    
+    def get_colormap(self):
+        """ Return colormap where red indicates positive correlation, white is
+        no correlation, and blue indicates anticorrelation """
+        LUT_colors =  [mpl.cm.RdBu(n) for n in range(255)]
+        return mpl.colors.LinearSegmentedColormap.from_list('BuRd', LUT_colors[::-1], N=255)
             
 if __name__=='__main__':
     # save file
-    make_dataset = True
+    make_dataset = False
     if make_dataset:
         save_directory = 'G:/Python/spontaneousData/pythonCode'
         ferret_name    = '1655'
@@ -159,10 +169,11 @@ if __name__=='__main__':
         zip.write(time_series_file_path+'.npy',os.path.basename(time_series_file_path+'.npy'))
         os.remove(time_series_file_path+'.npy')
 
-    # Load our sample dataset
+    # Load our sample dataset and perform some processing
     folder_path = os.path.dirname(__file__)
-    print(folder_path)
     test_obj = Spontaneous(folder_path)
+    test_obj.get_correlation_table()
+    test_obj.spatial_filter_events()
 
     # Show the average fluorescence changes of the time-series for a 15s window and some active event frames
     time_window = [15*100,15*115]
@@ -199,9 +210,10 @@ if __name__=='__main__':
     seedPt = [55,55]
     corrPattern = test_obj.get_correlation_pattern(seedPt)
     fig,ax = plt.subplots()
-    im=ax.imshow(-corrPattern,cmap='RdBu',vmin=-1,vmax=1)
+    im=ax.imshow(corrPattern,cmap=test_obj.get_colormap(),vmin=-1,vmax=1)
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="10%", pad=0.10)
     fig.colorbar(im, cax=cax, orientation='vertical')
     ax.set_title("Seed location: [{X},{Y}]".format(X=seedPt[1],Y=seedPt[0]))
     ax.plot(seedPt[1],seedPt[0],'og')
+    plt.show(block=True)
