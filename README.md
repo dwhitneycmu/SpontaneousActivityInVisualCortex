@@ -1,2 +1,8 @@
-# SpontaneousActivityInVisualCortex
-Imaging dataset of spontaneous activity in the developing ferret visual cortex
+# Python tutorial of a publicly made dataset of spontaneous activity from the ferret visual cortex
+
+**Overview**: As part of a CRCNS grant shared between the Fitzpatrick and Kaschube labs, we are excited to provide public access to an in vivo calcium imaging dataset of GCAMP6s. The time series dataset contains 10 minutes of spontaneous activity recorded with widefield epifluorescence imaging from the visual cortex of a lightly anesthetized ferret (43 days old). We also include a brief tutorial of Python code that can be used to explore the dataset. For this tutorial, we will demonstrate that spontaneous activity in the ferret visual cortex exhibits long-range correlated activity, and that these correlations strongly predict the layout of visually evoked orientation columns. Data acquired from this collaboration recently resulted in a published manuscript at [Nature Neuroscience](https://www.nature.com/articles/s41593-018-0247-5).  
+
+**Dataset Details:** [The time series dataset can be downloaded here](https://cloud.mpfi.org/url/nh5r72pri3fp4qxx). Imaging frames (640x540) were originally acquired using an Andor sCMOS camera at 15Hz, but to reduce the dataset size below 100MB we have temporally binned the imaging dataset down to 3Hz and spatially binned frames by 4x (160x135). Downsampling should only minimally affect the spontaneous activity patterns contained in this dataset. Imaging frames have been converted from raw fluorescence units to ΔF/F0. The baseline F0 for each pixel was obtained by applying a rank-order filter to the raw fluorescence trace with a rank of 15 and a time-window of 30s. A ROI mask was manually drawn around the cortical region with high, robust visually evoked activity.
+
+### Last updated by David Whitney on 2/27/2019
+david.whitney@mpfi.org
